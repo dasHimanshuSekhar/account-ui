@@ -9,7 +9,7 @@ function HomePage() {
       minHeight: '50vh' 
     }}>
       <h1 style={{ 
-        fontSize: '2em', // Reduced font size for smaller screens
+        fontSize: '1.5em', // Further reduced font size for smaller screens
         fontWeight: 'bold', 
         color: '#333', 
         textAlign: 'center' 

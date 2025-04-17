@@ -79,70 +79,70 @@ function AddTransaction() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
       <div style={{
-        width: '90%', // Make form wider on smaller screens
+        width: '95%', // Make form wider on smaller screens
         maxWidth: '600px', // Limit maximum width
-        padding: '15px', // Reduced padding for smaller screens
+        padding: '10px', // Reduced padding for smaller screens
         border: '1px solid #ccc',
         borderRadius: '8px',
         boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
         backgroundColor: '#f9f9f9',
       }}>
-        <h2 style={{ textAlign: 'center', color: '#333' }}>Add Transaction</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}> {/* Reduced gap */}
+        <h2 style={{ textAlign: 'center', color: '#333', fontSize: '1.2em' }}>Add Transaction</h2> {/* Reduced font size */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}> {/* Reduced gap */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Mobile Number:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Mobile Number:</label>
             <input
               type="number"
               name="mobileNumber"
               value={transactionData.mobileNumber}
               onChange={handleChange}
               required
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Purpose of Transaction:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Purpose of Transaction:</label>
             <input
               type="text"
               name="purpose"
               value={transactionData.purpose}
               onChange={handleChange}
               required
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Transaction Medium:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Transaction Medium:</label>
             <select
               name="isOnline"
               value={transactionData.isOnline}
               onChange={handleChange}
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             >
               <option value="true">UPI / Online</option>
               <option value="false">Cash</option>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Transaction Type:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Transaction Type:</label>
             <select
               name="isIncome"
               value={transactionData.isIncome}
               onChange={handleChange}
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             >
               <option value="true">Credit</option>
               <option value="false">Debit</option>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Category:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Category:</label>
             <select
               name="category"
               value={transactionData.category}
               onChange={handleChange}
               required
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             >
               <option value="">Select a category</option>
               <option value="Grocery">Grocery</option>
@@ -178,24 +178,24 @@ function AddTransaction() {
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Total Transaction Amount:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Total Transaction Amount:</label>
             <input
               type="number"
               name="totalTransactionAmount"
               value={transactionData.totalTransactionAmount}
               onChange={handleChange}
               required
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             />
           </div>
           {transactionData.isIncome === false && (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Do you want Refurbishment:</label>
+              <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Do you want Refurbishment:</label>
               <select
                 name="transactionRefurbishmentStatus"
                 value={transactionData.transactionRefurbishmentStatus}
                 onChange={handleChange}
-                style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+                style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
               >
                 <option value={false}>No</option>
                 <option value={true}>Yes</option>
@@ -203,22 +203,22 @@ function AddTransaction() {
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555', fontSize: '0.9em' }}>Remarks / Summary:</label>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Remarks / Summary:</label>
             <textarea
               name="remarks"
               value={transactionData.remarks}
               onChange={handleChange}
-              style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '80px' }}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '60px', fontSize: '0.8em' }}
             />
           </div>
           <button type="submit" style={{
-            padding: '8px 12px',
+            padding: '6px 10px',
             backgroundColor: '#4CAF50',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px',
+            fontSize: '0.7em',
             transition: 'background-color 0.3s ease',
           }}
             onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}

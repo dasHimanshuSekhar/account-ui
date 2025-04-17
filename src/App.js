@@ -102,7 +102,7 @@ function App() {
   const appStyle = {
     backgroundColor: isDarkMode ? '#282c34' : '#f0f0f0',
     color: isDarkMode ? '#fff' : '#282c34',
-    padding: '10px', // Reduced padding for smaller screens
+    padding: '8px', // Further reduced padding for even smaller screens
     fontFamily: 'Arial, sans-serif',
   };
 
@@ -110,9 +110,10 @@ function App() {
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: isDarkMode ? '#3e4451' : '#fff',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)', // Reduced shadow
     color: isDarkMode ? '#fff' : '#282c34',
     overflowX: 'auto', // Enable horizontal scrolling for the table on smaller screens
+    fontSize: '0.8em', // Reduce font size in table
   };
 
   const headerRowStyle = {
@@ -122,7 +123,7 @@ function App() {
 
   const headerStyle = {
     border: '1px solid #4CAF50',
-    padding: '8px', // Reduced padding for headers
+    padding: '6px', // Further reduced padding for headers
     textAlign: 'left',
     cursor: 'pointer',
   };
@@ -133,20 +134,20 @@ function App() {
 
   const cellStyle = {
     border: '1px solid #4CAF50',
-    padding: '8px', // Reduced padding for cells
+    padding: '6px', // Further reduced padding for cells
   };
 
   return (
     <Router>
       <div className="App" style={appStyle}>
-        <h1 style={{textAlign: 'center'}}>ISKCON Account Portal</h1>
+        <h1 style={{textAlign: 'center', fontSize: '1.5em'}}>ISKCON Account Portal</h1> {/* Reduced font size for heading */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '10px',
+          padding: '8px', // Further reduced padding
           borderRadius: '5px',
-          gap: '10px', // Reduced gap for smaller screens
+          gap: '8px', // Further reduced gap
           borderTop: '1px solid #ccc',    // Add top border
           borderBottom: '1px solid #ccc', // Add bottom border
           flexWrap: 'wrap', // Allow items to wrap on smaller screens
@@ -160,40 +161,43 @@ function App() {
               listStyleType: 'none', 
               padding: 0, 
               display: 'flex', 
-              gap: '10px', // Reduced gap for smaller screens
+              gap: '8px', // Further reduced gap
             }}>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '10px' }}>
+              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
                 <Link to="/home" style={{ // Change the link to /home
-                  padding: '8px 12px', // Reduced padding for buttons
+                  padding: '6px 10px', // Further reduced padding for buttons
                   backgroundColor: '#4CAF50',
                   color: 'white',
                   textDecoration: 'none',
                   borderRadius: '4px',
                   transition: 'background-color 0.3s ease',
+                  fontSize: '0.8em', // Reduced font size for buttons
                 }}
                 onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
                 onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Home</Link>
               </li>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '10px' }}>
+              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
                 <Link to="/" style={{
-                  padding: '8px 12px', // Reduced padding for buttons
+                  padding: '6px 10px', // Further reduced padding for buttons
                   backgroundColor: '#4CAF50',
                   color: 'white',
                   textDecoration: 'none',
                   borderRadius: '4px',
                   transition: 'background-color 0.3s ease',
+                  fontSize: '0.8em', // Reduced font size for buttons
                 }}
                 onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
                 onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>View Transactions</Link>
               </li>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '10px' }}>
+              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
                 <Link to="/add" style={{
-                  padding: '8px 12px', // Reduced padding for buttons
+                  padding: '6px 10px', // Further reduced padding for buttons
                   backgroundColor: '#4CAF50',
                   color: 'white',
                   textDecoration: 'none',
                   borderRadius: '4px',
                   transition: 'background-color 0.3s ease',
+                  fontSize: '0.8em', // Reduced font size for buttons
                 }}
                 onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
                 onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Add Transaction</Link>
@@ -201,13 +205,13 @@ function App() {
             </ul>
           </nav>
           <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
-            padding: '8px 12px', // Reduced padding for buttons
+            padding: '6px 10px', // Further reduced padding for buttons
             backgroundColor: '#4CAF50',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px', // Reduced font size
+            fontSize: '0.7em', // Further reduced font size
             transition: 'background-color 0.3s ease',
           }}
           onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
@@ -218,14 +222,14 @@ function App() {
           <Route path="/home" element={<HomePage />} /> {/* Add the new route */}
           <Route path="/" element={
             <>
-              <div style={{ marginBottom: '10px' }}> {/* Reduced margin for smaller screens */}
+              <div style={{ marginBottom: '8px' }}> {/* Further reduced margin */}
                 <input
                   type="text"
                   name="name"
                   placeholder="Filter by Name"
                   value={filters.name}
                   onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for inputs
+                  style={{ padding: '4px', margin: '2px', fontSize: '0.7em' }} // Reduced padding, margin and font size
                 />
 
                 <select
