@@ -11,6 +11,7 @@ function AddTransaction() {
     transactionRefurbishmentStatus: false,
     remarks: '',
   });
+  const [attachment, setAttachment] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -42,16 +43,48 @@ function AddTransaction() {
     }
   };
 
+  const handleAttachmentChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      const maxSizeInBytes = 500 * 1024; // 500KB
+      const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+      if (!allowedImageTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPEG, PNG, or GIF).');
+        e.target.value = ''; // Clear the selected file
+        setAttachment(null);
+        return;
+      }
+
+      if (file.size > maxSizeInBytes) {
+        alert('The image size must be less than 500KB.');
+        e.target.value = ''; // Clear the selected file
+        setAttachment(null);
+        return;
+      }
+
+      setAttachment(file);
+    } else {
+      setAttachment(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(transactionData)], {
+      type: "application/json"
+    }));
+    if (attachment) {
+      formData.append('attachment', attachment);
+    }
 
     try {
       const response = await fetch('https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/transaction/add-transactions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transactionData),
+        body: formData,
       });
 
       if (response.ok) {
@@ -66,6 +99,7 @@ function AddTransaction() {
           transactionRefurbishmentStatus: false,
           remarks: '',
         });
+        setAttachment(null); // Reset attachment
       } else {
         const errorData = await response.json();
         alert(`Failed to add transaction: ${errorData.statusDesc || 'Unknown error'}`);
@@ -209,6 +243,15 @@ function AddTransaction() {
               value={transactionData.remarks}
               onChange={handleChange}
               style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '60px', fontSize: '0.8em' }}
+            />
+          </div>
+           <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Attachment:</label>
+            <input
+              type="file"
+              name="attachment"
+              onChange={handleAttachmentChange}
+              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             />
           </div>
           <button type="submit" style={{

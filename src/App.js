@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
 import AddTransaction from './AddTransaction';
 import HomePage from './HomePage'; // Import the new component
+import { Buffer } from 'buffer'; // Import Buffer from buffer package
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -338,6 +339,9 @@ function App() {
                     <th style={headerStyle} onClick={() => handleSort('transactionRefurbishmentStatus')}>
                       Refurbishment Status
                     </th>
+                    <th style={headerStyle}>
+                      Attachment
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,6 +354,19 @@ function App() {
                       <td style={cellStyle}>{tx.category}</td>
                       <td style={cellStyle}>{new Date(tx.transactionDateTime).toLocaleString()}</td>
                       <td style={cellStyle}>{tx.transactionRefurbishmentStatus ? 'Yes' : 'No'}</td>
+                      <td style={cellStyle}>
+                        {tx.base64Attachment ? (
+                          <a 
+                            href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], {type: 'image/png'}))}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                          >
+                            View Attachment
+                          </a>
+                        ) : (
+                          'No Attachment'
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
