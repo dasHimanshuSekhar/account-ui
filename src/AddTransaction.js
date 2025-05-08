@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 
+// Add category lists
+const DEBIT_CATEGORIES = [
+  'Grocery', 'Vegetable', 'Gas', 'Petrol', 'Electricity', 'Maintainance',
+  'Center Rent', 'Bace Rent', 'Cook Devotee Salary', 'Cook Helper Salary',
+  'Toto Maintainer Salary', 'Camp', 'Preaching', 'Water Bill', 'Dairy Product',
+  'Deity', 'Fruits', 'Packaging Items', 'Journey Prasad', 'Others',
+  'Refurbishment to Devotee', 'Toto Purchased Items'
+];
+
+const CREDIT_CATEGORIES = [
+  'Bace Devotee Rent', 'Toto Outcome', 'Donation', 'Maintainance Item sold',
+  'Prasadam Laxmi(Monthly)', 'Prasadam Laxmi(Daily)', 'HG SJP Paid',
+  'Loan By Devotee'
+];
+
 function AddTransaction() {
   const [transactionData, setTransactionData] = useState({
     mobileNumber: localStorage.getItem('devoteeToken') || '',  // Initialize with the token
@@ -12,11 +27,21 @@ function AddTransaction() {
     remarks: '',
   });
   const [attachment, setAttachment] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
   
-    if (name === 'mobileNumber') {
+    if (name === 'category') {
+      // Auto-set isIncome based on category
+      const isCredit = CREDIT_CATEGORIES.includes(value);
+      setTransactionData(prevData => ({
+        ...prevData,
+        [name]: value,
+        isIncome: isCredit,
+        transactionRefurbishmentStatus: false // Reset refurbishment status
+      }));
+    } else if (name === 'mobileNumber') {
       if (value.length <= 10 && /^\d+$/.test(value)) {
         setTransactionData(prevData => ({
           ...prevData,
@@ -72,6 +97,7 @@ function AddTransaction() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(transactionData)], {
@@ -107,7 +133,20 @@ function AddTransaction() {
     } catch (error) {
       console.error('Error:', error);
       alert('An error occurred while adding the transaction.');
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const spinnerStyle = {
+    display: 'inline-block',
+    width: '20px',
+    height: '20px',
+    border: '3px solid rgba(255,255,255,.3)',
+    borderRadius: '50%',
+    borderTopColor: '#fff',
+    animation: 'spin 1s ease-in-out infinite',
+    marginRight: '10px'
   };
 
   return (
@@ -122,6 +161,13 @@ function AddTransaction() {
         backgroundColor: '#f9f9f9',
       }}>
         <h2 style={{ textAlign: 'center', color: '#333', fontSize: '1.2em' }}>Add Transaction</h2> {/* Reduced font size */}
+        <style>
+          {`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}
+        </style>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}> {/* Reduced gap */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Mobile Number:</label>
@@ -166,15 +212,18 @@ function AddTransaction() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Transaction Type:</label>
-            <select
-              name="isIncome"
-              value={transactionData.isIncome}
-              onChange={handleChange}
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            >
-              <option value="true">Credit</option>
-              <option value="false">Debit</option>
-            </select>
+            <input
+              type="text"
+              value={transactionData.isIncome ? 'Credit' : 'Debit'}
+              readOnly
+              style={{ 
+                padding: '4px', 
+                borderRadius: '4px', 
+                border: '1px solid #ccc', 
+                fontSize: '0.8em',
+                backgroundColor: '#f0f0f0'  // Gray background to indicate readonly
+              }}
+            />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Category:</label>
@@ -186,36 +235,16 @@ function AddTransaction() {
               style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             >
               <option value="">Select a category</option>
-              <option value="Grocery">Grocery</option>
-              <option value="Others">Others</option>
-              <option value="Vegetable">Vegetable</option>
-              <option value="Gas">Gas</option>
-              <option value="Electricity">Electricity</option>
-              <option value="Petrol">Petrol</option>
-              <option value="Bace Devotee Rent">Bace Devotee Rent</option>
-              <option value="Maintainance">Maintainance</option>
-              <option value="Center Rent">Center Rent</option>
-              <option value="Bace Rent">Bace Rent</option>
-              <option value="Toto Outcome">Toto Outcome</option>
-              <option value="Donation">Donation</option>
-              <option value="Cook Devotee Salary">Cook Devotee Salary</option>
-              <option value="Cook Helper Salary">Cook Helper Salary</option>
-              <option value="Toto Maintainer Salary">Toto Maintainer Salary</option>
-              <option value="Camp">Camp</option>
-              <option value="Preaching">Preaching</option>
-              <option value="Maintainance Item sold">Maintainance Item sold</option>
-              <option value="Water Bill">Water Bill</option>
-              <option value="Dairy Product">Dairy Product</option>
-              <option value="Deity">Deity</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Packaging Items">Packaging Items</option>
-              <option value="Journey Prasad">Journey Prasad</option>
-              <option value="Prasadam Laxmi(Monthly)">Prasadam Laxmi(Monthly)</option>
-              <option value="Prasadam Laxmi(Daily)">Prasadam Laxmi(Daily)</option>
-              <option value="Loan By Devotee">Loan By Devotee</option>
-              <option value="Refurbishment to Devotee">Refurbishment to Devotee</option>
-              <option value="Cash">Cash</option>
-              <option value="Toto Purchased Items">Toto Purchased Items</option>
+              <optgroup label="Debit Categories">
+                {DEBIT_CATEGORIES.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Credit Categories">
+                {CREDIT_CATEGORIES.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -261,19 +290,29 @@ function AddTransaction() {
               style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
             />
           </div>
-          <button type="submit" style={{
-            padding: '6px 10px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.7em',
-            transition: 'background-color 0.3s ease',
-          }}
-            onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-            onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}
-          >Add Transaction</button>
+          <button 
+            type="submit" 
+            style={{
+              padding: '6px 10px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isLoading ? 'wait' : 'pointer',
+              fontSize: '0.7em',
+              transition: 'background-color 0.3s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: isLoading ? 0.7 : 1,
+            }}
+            disabled={isLoading}
+            onMouseOver={(e) => { if (!isLoading) e.target.style.backgroundColor = '#367c39'; }}
+            onMouseOut={(e) => { if (!isLoading) e.target.style.backgroundColor = '#4CAF50'; }}
+          >
+            {isLoading && <div style={spinnerStyle} />}
+            {isLoading ? 'Adding Transaction...' : 'Add Transaction'}
+          </button>
         </form>
       </div>
     </div>
