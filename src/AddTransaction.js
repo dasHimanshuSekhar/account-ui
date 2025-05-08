@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 function AddTransaction() {
   const [transactionData, setTransactionData] = useState({
-    mobileNumber: '',
+    mobileNumber: localStorage.getItem('devoteeToken') || '',  // Initialize with the token
     purpose: '',
     isIncome: false,
     isOnline: true, // Default to credit (true)
@@ -90,7 +90,7 @@ function AddTransaction() {
       if (response.ok) {
         alert('Transaction added successfully!');
         setTransactionData({  // Reset form after successful submission
-          mobileNumber: '',
+          mobileNumber: localStorage.getItem('devoteeToken') || '',  // Initialize with the token
           purpose: '',
           isIncome: false,
           isOnline: true, // Default to credit (true)
@@ -126,12 +126,19 @@ function AddTransaction() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Mobile Number:</label>
             <input
-              type="number"
+              type="text"
               name="mobileNumber"
               value={transactionData.mobileNumber}
-              onChange={handleChange}
-              required
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
+              readOnly  // Make the field readonly
+              style={{ 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #ccc', 
+                backgroundColor: '#f0f0f0',  // Gray background to indicate readonly
+                appearance: 'textfield', // Remove increment/decrement buttons
+                MozAppearance: 'textfield',
+              }}
+              pattern="[0-9]{10}" // Add HTML5 validation for 10 digits
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>

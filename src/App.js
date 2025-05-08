@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Link, Routes, Navigate } from 'react-router-dom';
 import AddTransaction from './AddTransaction';
 import HomePage from './HomePage'; // Import the new component
 import { Buffer } from 'buffer'; // Import Buffer from buffer package
+import DevoteeRegistration from './DevoteeRegistration';
+import DevoteeLogin from './DevoteeLogin';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -23,16 +25,77 @@ function App() {
     key: null,
     direction: 'ascending',
   });
+  const [devoteeToken, setDevoteeToken] = useState(localStorage.getItem('devoteeToken') || null);
+  const [sessionTimeout, setSessionTimeout] = useState(null);
 
   useEffect(() => {
-    fetch('https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/transaction/fetch-transactions')
+    const token = localStorage.getItem('devoteeToken');
+    if (token) {
+      setDevoteeToken(token);
+      resetSessionTimeout(); // Start session timeout on login
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [devoteeToken]);
+
+  const fetchTransactions = () => {
+    if (!devoteeToken) {
+      setTransactions([]);
+      return;
+    }
+
+    fetch(`https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/transaction/fetch-transactions?mobileNumber=${devoteeToken}`, {
+      headers: {
+        'Authorization': `Bearer ${devoteeToken}`
+      }
+    })
       .then((response) => response.json())
       .then((data) => {
         console.log('API response:', data);
         setStatusDesc(data.statusDesc);
-        setTransactions(data.detailedTransactions);
+        if (data.detailedTransactions && Array.isArray(data.detailedTransactions)) {
+          setTransactions(data.detailedTransactions);
+        } else {
+          setTransactions([]);
+        }
       })
-      .catch((error) => console.error('API fetch error:', error));
+      .catch((error) => {
+        console.error('API fetch error:', error);
+        setTransactions([]);
+      });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('devoteeToken');
+    setDevoteeToken(null);
+    clearTimeout(sessionTimeout); // Clear the timeout
+    alert('Logged out successfully!');
+    window.location.reload(); // Force reload to update navigation
+  };
+
+  const resetSessionTimeout = () => {
+    clearTimeout(sessionTimeout);
+    const timeoutId = setTimeout(() => {
+      handleLogout();
+      alert('Session timed out due to inactivity.');
+    }, 30 * 60 * 1000); // 30 minutes
+    setSessionTimeout(timeoutId);
+  };
+
+  useEffect(() => {
+    // Reset timeout on activity
+    const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(event => {
+      window.addEventListener(event, resetSessionTimeout);
+    });
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, resetSessionTimeout);
+      });
+      clearTimeout(sessionTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -177,32 +240,84 @@ function App() {
                 onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
                 onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Home</Link>
               </li>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                <Link to="/" style={{
-                  padding: '6px 10px', // Further reduced padding for buttons
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.3s ease',
-                  fontSize: '0.8em', // Reduced font size for buttons
-                }}
-                onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>View Transactions</Link>
-              </li>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                <Link to="/add" style={{
-                  padding: '6px 10px', // Further reduced padding for buttons
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.3s ease',
-                  fontSize: '0.8em', // Reduced font size for buttons
-                }}
-                onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Add Transaction</Link>
-              </li>
+              {devoteeToken ? (
+                <>
+                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
+                    <Link to="/" style={{
+                      padding: '6px 10px', // Further reduced padding for buttons
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      transition: 'background-color 0.3s ease',
+                      fontSize: '0.8em', // Reduced font size for buttons
+                    }}
+                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
+                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>View Transactions</Link>
+                  </li>
+                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
+                    <Link to="/add" style={{
+                      padding: '6px 10px', // Further reduced padding for buttons
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      transition: 'background-color 0.3s ease',
+                      fontSize: '0.8em', // Reduced font size for buttons
+                    }}
+                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
+                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Add Transaction</Link>
+                  </li>
+                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
+                    <button onClick={handleLogout} style={{
+                      padding: '6px 10px', // Further reduced padding for buttons
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      border: 'none',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      transition: 'background-color 0.3s ease',
+                      fontSize: '0.8em', // Reduced font size for buttons
+                      cursor: 'pointer',
+                    }}
+                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
+                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Logout</button>
+                  </li>
+                </>
+              ) : (
+                <>
+                 </>
+              )}
+               {!devoteeToken && (
+                <>
+                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
+                    <Link to="/devotee/register" style={{
+                      padding: '6px 10px', // Further reduced padding for buttons
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      transition: 'background-color 0.3s ease',
+                      fontSize: '0.8em', // Reduced font size for buttons
+                    }}
+                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
+                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Devotee Registration</Link>
+                  </li>
+                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
+                    <Link to="/devotee/login" style={{
+                      padding: '6px 10px', // Further reduced padding for buttons
+                      backgroundColor: '#4CAF50',
+                      color: 'white',
+                      textDecoration: 'none',
+                      borderRadius: '4px',
+                      transition: 'background-color 0.3s ease',
+                      fontSize: '0.8em', // Reduced font size for buttons
+                    }}
+                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
+                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Devotee Login</Link>
+                  </li>
+                </>
+              )}
             </ul>
           </nav>
           <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
@@ -221,7 +336,7 @@ function App() {
 
         <Routes>
           <Route path="/home" element={<HomePage />} /> {/* Add the new route */}
-          <Route path="/" element={
+          <Route path="/" element={devoteeToken ? (
             <>
               <div style={{ marginBottom: '8px' }}> {/* Further reduced margin */}
                 <input
@@ -373,8 +488,12 @@ function App() {
               </table>
               {filteredTransactions.length === 0 && <p>No transactions found.</p>}
             </>
-          } />
-          <Route path="/add" element={<AddTransaction />} />
+          ) : (
+            <Navigate to="/home" replace />
+          )} />
+          <Route path="/add" element={devoteeToken ? <AddTransaction /> : <Navigate to="/devotee/login" replace />} />
+          <Route path="/devotee/register" element={<DevoteeRegistration />} />
+          <Route path="/devotee/login" element={<DevoteeLogin />} />
         </Routes>
       </div>
     </Router>
