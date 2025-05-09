@@ -5,6 +5,7 @@ import HomePage from './HomePage'; // Import the new component
 import { Buffer } from 'buffer'; // Import Buffer from buffer package
 import DevoteeRegistration from './DevoteeRegistration';
 import DevoteeLogin from './DevoteeLogin';
+import { BASE_URL, ADMIN_MOBILE } from './config';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -27,6 +28,8 @@ function App() {
   });
   const [devoteeToken, setDevoteeToken] = useState(localStorage.getItem('devoteeToken') || null);
   const [sessionTimeout, setSessionTimeout] = useState(null);
+  const [devoteeName, setDevoteeName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('devoteeToken');
@@ -46,7 +49,12 @@ function App() {
       return;
     }
 
-    fetch(`https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/transaction/fetch-transactions?mobileNumber=${devoteeToken}`, {
+    const isAdmin = devoteeToken === ADMIN_MOBILE;
+    const apiUrl = isAdmin 
+      ? `${BASE_URL}/transaction/fetch-transactions`  // Admin gets all transactions
+      : `${BASE_URL}/transaction/fetch-transactions?mobileNumber=${devoteeToken}`; // Users get filtered
+
+    fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${devoteeToken}`
       }
@@ -57,6 +65,10 @@ function App() {
         setStatusDesc(data.statusDesc);
         if (data.detailedTransactions && Array.isArray(data.detailedTransactions)) {
           setTransactions(data.detailedTransactions);
+          // Set devotee name from first transaction if not admin
+          if (!isAdmin && data.detailedTransactions.length > 0) {
+            setDevoteeName(data.detailedTransactions[0].name);
+          }
         } else {
           setTransactions([]);
         }
@@ -201,10 +213,82 @@ function App() {
     padding: '6px', // Further reduced padding for cells
   };
 
+  // Add styles for transaction rows
+  const getRowStyle = (isCredit, isDarkMode) => ({
+    backgroundColor: isCredit 
+      ? (isDarkMode ? '#1b4e1b' : '#e8f5e9') // Green for credit
+      : (isDarkMode ? '#4e1b1b' : '#ffebee'), // Red for debit
+  });
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filterTransactions = (transactions) => {
+    if (!searchTerm) return transactions;
+
+    return transactions.filter(tx => {
+      const searchLower = searchTerm.toLowerCase();
+      if (devoteeToken === ADMIN_MOBILE) {
+        // Convert mobile number to string before using includes
+        return (tx.name?.toLowerCase() || '').includes(searchLower) ||
+               (tx.mobileNumber?.toString() || '').includes(searchTerm) ||
+               (tx.category?.toLowerCase() || '').includes(searchLower);
+      } else {
+        // Non-admin can only search by category
+        return (tx.category?.toLowerCase() || '').includes(searchLower);
+      }
+    });
+  };
+
   return (
     <Router>
       <div className="App" style={appStyle}>
-        <h1 style={{textAlign: 'center', fontSize: '1.5em'}}>ISKCON Account Portal</h1> {/* Reduced font size for heading */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '10px 20px',
+          borderBottom: '1px solid #ccc'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <h1 style={{ fontSize: '1.5em', margin: 0 }}>ISKCON Account Portal</h1>
+            {devoteeToken && devoteeToken !== ADMIN_MOBILE && devoteeName && (
+              <span style={{ 
+                fontSize: '1em',
+                color: isDarkMode ? '#aaa' : '#666' 
+              }}>
+                [ {devoteeName} ]
+              </span>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
+              padding: '6px 10px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.7em',
+            }}>
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+            {devoteeToken && (
+              <button onClick={handleLogout} style={{
+                padding: '6px 10px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.8em',
+              }}>Logout</button>
+            )}
+          </div>
+        </div>
+
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -268,21 +352,6 @@ function App() {
                       onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
                       onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Add Transaction</Link>
                   </li>
-                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                    <button onClick={handleLogout} style={{
-                      padding: '6px 10px', // Further reduced padding for buttons
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      textDecoration: 'none',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.3s ease',
-                      fontSize: '0.8em', // Reduced font size for buttons
-                      cursor: 'pointer',
-                    }}
-                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Logout</button>
-                  </li>
                 </>
               ) : (
                 <>
@@ -320,88 +389,59 @@ function App() {
               )}
             </ul>
           </nav>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
-            padding: '6px 10px', // Further reduced padding for buttons
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '0.7em', // Further reduced font size
-            transition: 'background-color 0.3s ease',
-          }}
-          onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-          onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>{isDarkMode ? '☀️' : '🌙'}</button>
         </div>
 
         <Routes>
           <Route path="/home" element={<HomePage />} /> {/* Add the new route */}
           <Route path="/" element={devoteeToken ? (
             <>
-              <div style={{ marginBottom: '8px' }}> {/* Further reduced margin */}
+              <div style={{ 
+                padding: '15px', 
+                backgroundColor: isDarkMode ? '#2d333b' : '#f5f5f5',
+                display: 'flex',
+                gap: '10px',
+                flexWrap: 'wrap'
+              }}>
+                {/* Unified search bar */}
                 <input
                   type="text"
-                  name="name"
-                  placeholder="Filter by Name"
-                  value={filters.name}
-                  onChange={handleFilterChange}
-                  style={{ padding: '4px', margin: '2px', fontSize: '0.7em' }} // Reduced padding, margin and font size
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  placeholder={devoteeToken === ADMIN_MOBILE ? 
+                    "Search by name, mobile, or category..." : 
+                    "Search by category..."}
+                  style={{ 
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    width: '300px'
+                  }}
                 />
-
-                <select
-                  name="type"
-                  value={filters.type}
+                
+                {/* Date range filter */}
+                <input
+                  type="date"
+                  name="dateMin"
+                  value={filters.dateMin}
                   onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for selects
-                >
-                  <option value="">All Types</option>
-                  {[...new Set(transactions.map(tx => tx.transactionType))].map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="mode"
-                  value={filters.mode}
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                <input
+                  type="date"
+                  name="dateMax"
+                  value={filters.dateMax}
                   onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for selects
-                >
-                  <option value="">All Modes</option>
-                  {[...new Set(transactions.map(tx => tx.transactionMode))].map(mode => (
-                    <option key={mode} value={mode}>{mode}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="category"
-                  value={filters.category}
-                  onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for selects
-                >
-                  <option value="">All Categories</option>
-                  {[...new Set(transactions.map(tx => tx.category))].map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="refurbishmentStatus"
-                  value={filters.refurbishmentStatus}
-                  onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for selects
-                >
-                  <option value="">All Statuses</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                
+                {/* Amount range filter */}
                 <input
                   type="number"
                   name="amountMin"
                   placeholder="Min Amount"
                   value={filters.amountMin}
                   onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for inputs
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
                 <input
                   type="number"
@@ -409,79 +449,67 @@ function App() {
                   placeholder="Max Amount"
                   value={filters.amountMax}
                   onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for inputs
-                />
-
-                <input
-                  type="date"
-                  name="dateMin"
-                  placeholder="Min Date"
-                  value={filters.dateMin}
-                  onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for inputs
-                />
-                <input
-                  type="date"
-                  name="dateMax"
-                  placeholder="Max Date"
-                  value={filters.dateMax}
-                  onChange={handleFilterChange}
-                  style={{ padding: '6px', margin: '3px' }} // Reduced padding and margin for inputs
+                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
               </div>
 
               <table style={tableStyle}>
                 <thead>
                   <tr style={headerRowStyle}>
-                    <th style={headerStyle} onClick={() => handleSort('name')}>
-                      Name
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('mobileNumber')}>
-                      Mobile
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('totalTransactionAmount')}>
-                      Amount
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('transactionType')}>
-                      Type
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('category')}>
-                      Mode/Category
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('transactionDateTime')}>
-                      Date & Time
-                    </th>
-                    <th style={headerStyle} onClick={() => handleSort('transactionRefurbishmentStatus')}>
-                      Refurbishment Status
-                    </th>
-                    <th style={headerStyle}>
-                      Attachment
-                    </th>
+                    {devoteeToken === ADMIN_MOBILE ? (
+                      <>
+                        <th style={headerStyle}>Name</th>
+                        <th style={headerStyle}>Mobile</th>
+                        <th style={headerStyle}>Date & Time</th>
+                        <th style={headerStyle}>Category</th>
+                        <th style={headerStyle}>Amount</th>
+                        <th style={headerStyle}>Attachment</th>
+                      </>
+                    ) : (
+                      <>
+                        <th style={headerStyle}>Date & Time</th>
+                        <th style={headerStyle}>Category</th>
+                        <th style={headerStyle}>Amount</th>
+                        <th style={headerStyle}>Attachment</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((tx, index) => (
-                    <tr key={tx.transactionId} style={{ ...rowStyle, backgroundColor: index % 2 === 0 ? (isDarkMode ? '#666' : '#f2f2f2') : (isDarkMode ? '#555' : 'white') }}>
-                      <td style={cellStyle}>{tx.name}</td>
-                      <td style={cellStyle}>{tx.mobileNumber}</td>
-                      <td style={cellStyle}>₹{tx.totalTransactionAmount}</td>
-                      <td style={cellStyle}>{tx.transactionType}</td>
-                      <td style={cellStyle}>{tx.category}</td>
-                      <td style={cellStyle}>{new Date(tx.transactionDateTime).toLocaleString()}</td>
-                      <td style={cellStyle}>{tx.transactionRefurbishmentStatus ? 'Yes' : 'No'}</td>
-                      <td style={cellStyle}>
-                        {tx.base64Attachment ? (
-                          <a 
-                            href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], {type: 'image/png'}))}
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                          >
-                            View Attachment
-                          </a>
-                        ) : (
-                          'No Attachment'
-                        )}
-                      </td>
+                  {filterTransactions(filteredTransactions).map((tx, index) => (
+                    <tr key={tx.transactionId} 
+                        style={getRowStyle(tx.isIncome, isDarkMode)}>
+                      {devoteeToken === ADMIN_MOBILE ? (
+                        <>
+                          <td style={cellStyle}>{tx.name}</td>
+                          <td style={cellStyle}>{tx.mobileNumber}</td>
+                          <td style={cellStyle}>{new Date(tx.transactionDateTime).toLocaleString()}</td>
+                          <td style={cellStyle}>{tx.category}</td>
+                          <td style={cellStyle}>₹{tx.totalTransactionAmount}</td>
+                          <td style={cellStyle}>
+                            {tx.base64Attachment ? (
+                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], 
+                                 {type: 'image/png'}))} target="_blank" rel="noopener noreferrer">
+                                View Attachment
+                              </a>
+                            ) : 'No Attachment'}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td style={cellStyle}>{new Date(tx.transactionDateTime).toLocaleString()}</td>
+                          <td style={cellStyle}>{tx.category}</td>
+                          <td style={cellStyle}>₹{tx.totalTransactionAmount}</td>
+                          <td style={cellStyle}>
+                            {tx.base64Attachment ? (
+                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')],
+                                 {type: 'image/png'}))} target="_blank" rel="noopener noreferrer">
+                                View Attachment
+                              </a>
+                            ) : 'No Attachment'}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>

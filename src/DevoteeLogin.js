@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BASE_URL } from './config';
 
 function DevoteeLogin() {
   const [loginData, setLoginData] = useState({
@@ -20,7 +21,7 @@ function DevoteeLogin() {
     e.preventDefault();
 
     try {
-      const response = await fetch('https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/devotee/login', {
+      const response = await fetch(`${BASE_URL}/devotee/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
