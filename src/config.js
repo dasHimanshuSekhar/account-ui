@@ -2,3 +2,4 @@
 
 export const BASE_URL = "http://127.0.0.1:9090";
 export const ADMIN_MOBILE = "8018394576";
+export * from './theme';

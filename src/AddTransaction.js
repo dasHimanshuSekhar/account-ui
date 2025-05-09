@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { BASE_URL, getTheme, globalStyles } from './config';
+import { getCommonStyles } from './theme';
+import { useTheme } from './ThemeContext';
+import { formatDateTime } from './utils';
 
 // Add category lists
 const DEBIT_CATEGORIES = [
@@ -17,21 +21,102 @@ const CREDIT_CATEGORIES = [
 
 function AddTransaction() {
   const [transactionData, setTransactionData] = useState({
-    mobileNumber: localStorage.getItem('devoteeToken') || '',  // Initialize with the token
+    mobileNumber: localStorage.getItem('devoteeToken') || '',
     purpose: '',
     isIncome: false,
-    isOnline: true, // Default to credit (true)
+    isOnline: true,
     category: '',
+    transactionDateTime: new Date().toISOString().slice(0, 16), // Initialize with current date-time
     totalTransactionAmount: '',
     transactionRefurbishmentStatus: false,
     remarks: '',
   });
   const [attachment, setAttachment] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { isDarkMode } = useTheme();
+
+  const theme = getTheme(isDarkMode);
+  const commonStyles = getCommonStyles(theme);
+
+  // Styles
+  const pageStyle = {
+    minHeight: '100vh',
+    minWidth: '100vw',
+    background: theme.colors.background,
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontPrimary,
+    backgroundAttachment: 'fixed',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    transition: 'background 0.5s, color 0.5s'
+  };
+
+  const cardStyle = {
+    background: theme.colors.card,
+    borderRadius: theme.components.card.borderRadius,
+    boxShadow: theme.colors.shadow,
+    padding: '30px',
+    margin: '32px auto',
+    maxWidth: '600px',
+    width: '95%',
+    border: `1.5px solid ${theme.colors.border}`,
+    backdropFilter: 'blur(2px)'
+  };
+
+  const labelStyle = {
+    marginBottom: '6px',
+    fontWeight: 600,
+    color: theme.colors.accent,
+    fontFamily: theme.typography.fontSecondary,
+    fontSize: '1.05em'
+  };
+
+  const inputStyle = {
+    ...commonStyles.input,
+    width: '100%',
+    marginBottom: '15px',
+    padding: '12px',
+    borderRadius: '8px',
+    border: `1.5px solid ${theme.colors.border}`,
+    background: theme.colors.inputBg,
+    color: theme.colors.inputText,
+    fontSize: '1.05em'
+  };
+
+  const buttonStyle = {
+    ...theme.components.button,
+    background: theme.colors.accent,
+    color: isDarkMode ? '#222' : '#fff',
+    border: 'none',
+    borderRadius: theme.components.button.borderRadius,
+    cursor: 'pointer',
+    fontFamily: theme.typography.fontSecondary,
+    marginTop: '10px',
+    width: '100%',
+    fontSize: '1.1em'
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
   
+    if (name === 'transactionDateTime') {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      if (selectedDate > today) {
+        alert('Transaction date cannot be in the future');
+        return;
+      }
+      
+      // Store ISO string for input field, but format for backend when submitting
+      setTransactionData(prevData => ({
+        ...prevData,
+        [name]: value
+      }));
+      return;
+    }
+    
     if (name === 'category') {
       // Auto-set isIncome based on category
       const isCredit = CREDIT_CATEGORIES.includes(value);
@@ -99,8 +184,23 @@ function AddTransaction() {
     e.preventDefault();
     setIsLoading(true);
 
+    const formattedDate = new Date(transactionData.transactionDateTime)
+      .toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).replace(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+)/, '$1-$2-$3 $4:$5');
+
+    const submissionData = {
+      ...transactionData,
+      transactionDateTime: formattedDate
+    };
+
     const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(transactionData)], {
+    formData.append('data', new Blob([JSON.stringify(submissionData)], {
       type: "application/json"
     }));
     if (attachment) {
@@ -108,7 +208,7 @@ function AddTransaction() {
     }
 
     try {
-      const response = await fetch('https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/transaction/add-transactions', {
+      const response = await fetch(`${BASE_URL}/transaction/add-transactions`, {
         method: 'POST',
         body: formData,
       });
@@ -121,6 +221,7 @@ function AddTransaction() {
           isIncome: false,
           isOnline: true, // Default to credit (true)
           category: '',
+          transactionDateTime: '',
           totalTransactionAmount: '',
           transactionRefurbishmentStatus: false,
           remarks: '',
@@ -138,180 +239,103 @@ function AddTransaction() {
     }
   };
 
-  const spinnerStyle = {
-    display: 'inline-block',
-    width: '20px',
-    height: '20px',
-    border: '3px solid rgba(255,255,255,.3)',
-    borderRadius: '50%',
-    borderTopColor: '#fff',
-    animation: 'spin 1s ease-in-out infinite',
-    marginRight: '10px'
-  };
-
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-      <div style={{
-        width: '95%', // Make form wider on smaller screens
-        maxWidth: '600px', // Limit maximum width
-        padding: '10px', // Reduced padding for smaller screens
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#f9f9f9',
-      }}>
-        <h2 style={{ textAlign: 'center', color: '#333', fontSize: '1.2em' }}>Add Transaction</h2> {/* Reduced font size */}
-        <style>
-          {`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}
-        </style>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}> {/* Reduced gap */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Mobile Number:</label>
-            <input
-              type="text"
-              name="mobileNumber"
-              value={transactionData.mobileNumber}
-              readOnly  // Make the field readonly
-              style={{ 
-                padding: '8px', 
-                borderRadius: '4px', 
-                border: '1px solid #ccc', 
-                backgroundColor: '#f0f0f0',  // Gray background to indicate readonly
-                appearance: 'textfield', // Remove increment/decrement buttons
-                MozAppearance: 'textfield',
-              }}
-              pattern="[0-9]{10}" // Add HTML5 validation for 10 digits
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Purpose of Transaction:</label>
-            <input
-              type="text"
-              name="purpose"
-              value={transactionData.purpose}
-              onChange={handleChange}
-              required
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Transaction Medium:</label>
-            <select
-              name="isOnline"
-              value={transactionData.isOnline}
-              onChange={handleChange}
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            >
-              <option value="true">UPI / Online</option>
-              <option value="false">Cash</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Transaction Type:</label>
-            <input
-              type="text"
-              value={transactionData.isIncome ? 'Credit' : 'Debit'}
-              readOnly
-              style={{ 
-                padding: '4px', 
-                borderRadius: '4px', 
-                border: '1px solid #ccc', 
-                fontSize: '0.8em',
-                backgroundColor: '#f0f0f0'  // Gray background to indicate readonly
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Category:</label>
-            <select
-              name="category"
-              value={transactionData.category}
-              onChange={handleChange}
-              required
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            >
-              <option value="">Select a category</option>
-              <optgroup label="Debit Categories">
-                {DEBIT_CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Credit Categories">
-                {CREDIT_CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </optgroup>
-            </select>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Total Transaction Amount:</label>
-            <input
-              type="number"
-              name="totalTransactionAmount"
-              value={transactionData.totalTransactionAmount}
-              onChange={handleChange}
-              required
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            />
-          </div>
-          {transactionData.isIncome === false && (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Do you want Refurbishment:</label>
-              <select
-                name="transactionRefurbishmentStatus"
-                value={transactionData.transactionRefurbishmentStatus}
-                onChange={handleChange}
-                style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-              >
-                <option value={false}>No</option>
-                <option value={true}>Yes</option>
-              </select>
-            </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Remarks / Summary:</label>
-            <textarea
-              name="remarks"
-              value={transactionData.remarks}
-              onChange={handleChange}
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '60px', fontSize: '0.8em' }}
-            />
-          </div>
-           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <label style={{ marginBottom: '3px', fontWeight: 'bold', color: '#555', fontSize: '0.8em' }}>Attachment:</label>
-            <input
-              type="file"
-              name="attachment"
-              onChange={handleAttachmentChange}
-              style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.8em' }}
-            />
-          </div>
-          <button 
-            type="submit" 
-            style={{
-              padding: '6px 10px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'wait' : 'pointer',
-              fontSize: '0.7em',
-              transition: 'background-color 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: isLoading ? 0.7 : 1,
-            }}
-            disabled={isLoading}
-            onMouseOver={(e) => { if (!isLoading) e.target.style.backgroundColor = '#367c39'; }}
-            onMouseOut={(e) => { if (!isLoading) e.target.style.backgroundColor = '#4CAF50'; }}
+    <div style={pageStyle}>
+      <style>
+        {globalStyles}
+        {commonStyles.globalInputStyles}
+      </style>
+      <div style={cardStyle}>
+        <h2 style={{
+          color: theme.colors.heading,
+          textAlign: 'center',
+          marginBottom: '24px',
+          fontSize: '1.5em',
+          fontFamily: theme.typography.fontSecondary
+        }}>Add Transaction</h2>
+        <form onSubmit={handleSubmit}>
+          <select
+            name="category"
+            value={transactionData.category}
+            onChange={handleChange}
+            required
+            style={inputStyle}
+            placeholder="Select Category"
           >
-            {isLoading && <div style={spinnerStyle} />}
-            {isLoading ? 'Adding Transaction...' : 'Add Transaction'}
+            <option value="">Select a category</option>
+            <optgroup label="Debit Categories">
+              {DEBIT_CATEGORIES.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Credit Categories">
+              {CREDIT_CATEGORIES.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </optgroup>
+          </select>
+
+          <input
+            type="datetime-local"
+            name="transactionDateTime"
+            value={transactionData.transactionDateTime}
+            onChange={handleChange}
+            required
+            max={new Date().toISOString().slice(0, 16)} // Restrict future dates in picker
+            style={inputStyle}
+          />
+
+          <select
+            name="isOnline"
+            value={transactionData.isOnline}
+            onChange={handleChange}
+            style={inputStyle}
+          >
+            <option value="true">UPI / Online</option>
+            <option value="false">Cash</option>
+          </select>
+
+          <input
+            type="text"
+            name="purpose"
+            value={transactionData.purpose}
+            onChange={handleChange}
+            placeholder="Purpose of Transaction"
+            required
+            style={inputStyle}
+          />
+
+          <input
+            type="number"
+            name="totalTransactionAmount"
+            value={transactionData.totalTransactionAmount}
+            onChange={handleChange}
+            placeholder="Amount"
+            required
+            style={inputStyle}
+          />
+
+          <textarea
+            name="remarks"
+            value={transactionData.remarks}
+            onChange={handleChange}
+            placeholder="Remarks (optional)"
+            style={inputStyle}
+          />
+
+          <input
+            type="file"
+            name="attachment"
+            onChange={handleAttachmentChange}
+            style={inputStyle}
+          />
+
+          <button
+            type="submit"
+            style={buttonStyle}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Adding...' : 'Add Transaction'}
           </button>
         </form>
       </div>

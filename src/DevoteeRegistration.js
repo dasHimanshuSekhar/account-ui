@@ -1,16 +1,68 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BASE_URL, getTheme, globalStyles } from './config';
+import { getCommonStyles } from './theme';
+import { useTheme } from './ThemeContext';
 
 function DevoteeRegistration() {
-  const [devoteeData, setDevoteeData] = useState({
-    mobileNumber: '',
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
     name: '',
+    mobileNumber: ''
   });
+
+  const { isDarkMode } = useTheme();
+  const theme = getTheme(isDarkMode);
+  const commonStyles = getCommonStyles(theme);
+
+  const pageStyle = {
+    minHeight: '100vh',
+    minWidth: '100vw',
+    background: theme.colors.background,
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontPrimary,
+    backgroundAttachment: 'fixed',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    transition: 'background 0.5s, color 0.5s'
+  };
+
+  const cardStyle = {
+    background: theme.colors.card,
+    borderRadius: theme.components.card.borderRadius,
+    boxShadow: theme.colors.shadow,
+    padding: theme.components.card.padding,
+    margin: '32px auto',
+    maxWidth: '600px', // Match login form width
+    width: '95%', // Responsive width
+    border: `1.5px solid ${theme.colors.border}`,
+    backdropFilter: 'blur(2px)'
+  };
+
+  const inputStyle = {
+    ...commonStyles.input,
+    width: '100%',
+    marginBottom: '18px',
+    boxShadow: theme.colors.shadow,
+  };
+
+  const buttonStyle = {
+    ...theme.components.button,
+    background: theme.colors.accent,
+    color: isDarkMode ? '#222' : '#fff',
+    border: 'none',
+    width: '100%',
+    padding: '12px',
+    marginTop: '10px',
+    fontSize: '1.1em',
+    cursor: 'pointer'
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setDevoteeData(prevData => ({
-      ...prevData,
-      [name]: value,
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -18,79 +70,67 @@ function DevoteeRegistration() {
     e.preventDefault();
 
     try {
-      const response = await fetch('https://01de893a-a4b9-4c34-933f-7d799abd96a7.e1-us-east-azure.choreoapps.dev/devotee/register', {
+      const response = await fetch(`${BASE_URL}/devotee/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(devoteeData),
+        body: JSON.stringify({
+          name: formData.name,
+          mobileNumber: formData.mobileNumber
+        }),
       });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        alert(responseData.statusDesc);
-        setDevoteeData({
-          mobileNumber: '',
-          name: '',
-        });
+      const data = await response.json();
+      if (data.statusCode === 0) {
+        alert('Registration successful!');
+        navigate('/devotee/login');
       } else {
-        const errorData = await response.json();
-        alert(`Failed to register devotee: ${errorData.statusDesc || 'Unknown error'}`);
+        alert(data.statusDesc || 'Registration failed');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('An error occurred while registering the devotee.');
+      alert('An error occurred during registration');
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-      <div style={{
-        width: '95%',
-        maxWidth: '600px',
-        padding: '20px',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-        backgroundColor: '#f9f9f9',
-      }}>
-        <h2 style={{ textAlign: 'center', color: '#333' }}>Devotee Registration</h2>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Mobile Number:</label>
-            <input
-              type="text"
-              name="mobileNumber"
-              value={devoteeData.mobileNumber}
-              onChange={handleChange}
-              required
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', appearance: 'textfield', MozAppearance: 'textfield' }}
-              pattern="[0-9]{10}"
-            />
-          </div>
-          <div>
-            <label style={{ marginBottom: '5px', fontWeight: 'bold', color: '#555' }}>Name:</label>
-            <input
-              type="text"
-              name="name"
-              value={devoteeData.name}
-              onChange={handleChange}
-              required
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-          </div>
-          <button type="submit" style={{
-            padding: '10px 15px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'background-color 0.3s ease',
-          }}
-            onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-            onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}
-          >Register</button>
+    <div style={pageStyle}>
+      <style>
+        {globalStyles}
+        {commonStyles.globalInputStyles}
+      </style>
+      <div style={cardStyle}>
+        <h2 style={{
+          color: theme.colors.heading,
+          textAlign: 'center',
+          marginBottom: '24px',
+          fontSize: '1.5em',
+          fontFamily: theme.typography.fontSecondary
+        }}>Devotee Registration</h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            style={inputStyle}
+          />
+          <input
+            type="text"
+            name="mobileNumber"
+            placeholder="Mobile Number"
+            value={formData.mobileNumber}
+            onChange={handleChange}
+            required
+            pattern="[0-9]{10}"
+            style={inputStyle}
+          />
+          <button type="submit" style={buttonStyle}>
+            Register
+          </button>
         </form>
       </div>
     </div>

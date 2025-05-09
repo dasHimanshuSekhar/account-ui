@@ -5,10 +5,25 @@ import HomePage from './HomePage'; // Import the new component
 import { Buffer } from 'buffer'; // Import Buffer from buffer package
 import DevoteeRegistration from './DevoteeRegistration';
 import DevoteeLogin from './DevoteeLogin';
-import { BASE_URL, ADMIN_MOBILE } from './config';
+import { BASE_URL, ADMIN_MOBILE, getTheme } from './config'; // Add getTheme to the import
+import { ThemeProvider, useTheme } from './ThemeContext'; // Ensure ThemeProvider and useTheme are imported
 
 function App() {
+  return (
+    <ThemeProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { isDarkMode, setIsDarkMode } = useTheme(); // Retrieve theme context
+  const theme = getTheme(isDarkMode); // Get the theme based on dark mode
+
   const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
   const [statusDesc, setStatusDesc] = useState('');
   const [filters, setFilters] = useState({
     name: '',
@@ -21,7 +36,6 @@ function App() {
     dateMin: '',
     dateMax: '',
   });
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: 'ascending',
@@ -30,6 +44,7 @@ function App() {
   const [sessionTimeout, setSessionTimeout] = useState(null);
   const [devoteeName, setDevoteeName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [notification, setNotification] = useState(null); // Add notification state
 
   useEffect(() => {
     const token = localStorage.getItem('devoteeToken');
@@ -49,6 +64,7 @@ function App() {
       return;
     }
 
+    setIsLoading(true); // Start loading
     const isAdmin = devoteeToken === ADMIN_MOBILE;
     const apiUrl = isAdmin 
       ? `${BASE_URL}/transaction/fetch-transactions`  // Admin gets all transactions
@@ -59,7 +75,12 @@ function App() {
         'Authorization': `Bearer ${devoteeToken}`
       }
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch transactions');
+        }
+        return response.json();
+      })
       .then((data) => {
         console.log('API response:', data);
         setStatusDesc(data.statusDesc);
@@ -75,7 +96,11 @@ function App() {
       })
       .catch((error) => {
         console.error('API fetch error:', error);
+        setNotification('Failed to fetch transactions. Please try again.');
         setTransactions([]);
+      })
+      .finally(() => {
+        setIsLoading(false); // End loading
       });
   };
 
@@ -176,48 +201,90 @@ function App() {
   });
 
   const appStyle = {
-    backgroundColor: isDarkMode ? '#282c34' : '#f0f0f0',
-    color: isDarkMode ? '#fff' : '#282c34',
-    padding: '8px', // Further reduced padding for even smaller screens
-    fontFamily: 'Arial, sans-serif',
+    backgroundColor: theme.colors.background,
+    color: theme.colors.text,
+    backgroundImage: `url('/path/to/background-image.jpg')`, // Add background image
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+    opacity: 0.95, // Make the background image more visible
+    fontFamily: theme.typography.fontPrimary,
+    minHeight: '100vh',
+    padding: '8px'
+  };
+
+  const filterContainerStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'nowrap', // Ensure filters stay in a single line
+    gap: '10px',
+    padding: '10px',
+    backgroundColor: theme.colors.card, // Use theme.colors.card
+    borderRadius: '16px', // Add curvy border
+    boxShadow: theme.colors.shadow, // Add shadow for better visibility
+    marginBottom: '16px',
+    border: `1px solid ${theme.colors.border}` // Add border
+  };
+
+  const filterInputStyle = {
+    padding: '10px',
+    borderRadius: '8px', // Add slight curve to inputs
+    border: `1px solid ${theme.colors.border}`, // Use theme.colors.border
+    backgroundColor: theme.colors.inputBg, // Use theme.colors.inputBg
+    color: theme.colors.inputText, // Use theme.colors.inputText
+    fontSize: '0.9em',
+    flex: '1', // Ensure inputs adjust to available space
+    minWidth: '150px',
+    maxWidth: '200px',
+    outline: 'none',
+    transition: 'background 0.3s, color 0.3s, border 0.3s'
   };
 
   const tableStyle = {
     width: '100%',
     borderCollapse: 'collapse',
-    backgroundColor: isDarkMode ? '#3e4451' : '#fff',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)', // Reduced shadow
-    color: isDarkMode ? '#fff' : '#282c34',
-    overflowX: 'auto', // Enable horizontal scrolling for the table on smaller screens
-    fontSize: '0.8em', // Reduce font size in table
+    backgroundColor: theme.colors.card, // Use theme.colors.card
+    boxShadow: theme.colors.shadow, // Use theme.colors.shadow
+    color: theme.colors.text, // Use theme.colors.text
+    borderRadius: '16px', // Add curvy border
+    overflow: 'hidden', // Ensure content stays within the rounded border
+    fontSize: '0.9em',
+    marginTop: '16px'
   };
 
   const headerRowStyle = {
-    backgroundColor: '#4CAF50',
-    color: '#fff',
+    backgroundColor: theme.colors.tableHeader, // Use theme.colors.tableHeader
+    color: theme.colors.accent, // Use theme.colors.accent
+    fontWeight: 700,
+    fontSize: '1em',
+    letterSpacing: '0.5px',
+    borderBottom: `2px solid ${theme.colors.border}`, // Use theme.colors.border
+    textAlign: 'left'
   };
 
   const headerStyle = {
-    border: '1px solid #4CAF50',
-    padding: '6px', // Further reduced padding for headers
-    textAlign: 'left',
+    padding: '12px',
+    border: `1px solid ${theme.colors.border}`, // Use theme.colors.border
     cursor: 'pointer',
-  };
-
-  const rowStyle = {
-    backgroundColor: isDarkMode ? '#4b5263' : '#f9f9f9',
+    backgroundColor: theme.colors.card, // Use theme.colors.card
+    transition: 'background 0.3s, color 0.3s'
   };
 
   const cellStyle = {
-    border: '1px solid #4CAF50',
-    padding: '6px', // Further reduced padding for cells
+    padding: '12px',
+    border: `1px solid ${theme.colors.border}`, // Use theme.colors.border
+    backgroundColor: theme.colors.card, // Use theme.colors.card
+    color: theme.colors.text, // Use theme.colors.text
+    transition: 'background 0.3s, color 0.3s'
   };
 
-  // Add styles for transaction rows
-  const getRowStyle = (isCredit, isDarkMode) => ({
-    backgroundColor: isCredit 
-      ? (isDarkMode ? '#1b4e1b' : '#e8f5e9') // Green for credit
-      : (isDarkMode ? '#4e1b1b' : '#ffebee'), // Red for debit
+  const getRowStyle = (isCredit) => ({
+    backgroundColor: isCredit
+      ? (isDarkMode ? 'rgba(30, 77, 140, 0.1)' : 'rgba(212, 175, 55, 0.1)')
+      : (isDarkMode ? 'rgba(198, 40, 40, 0.1)' : 'rgba(255, 87, 34, 0.1)'),
+    color: theme.colors.text, // Use theme.colors.text
+    fontWeight: 500,
+    transition: 'background 0.3s'
   });
 
   const handleSearch = (e) => {
@@ -241,22 +308,151 @@ function App() {
     });
   };
 
+  const navLinkStyle = {
+    padding: '10px 20px',
+    background: theme.colors.accent, // Use theme.colors.accent
+    color: isDarkMode ? '#222' : '#fff',
+    textDecoration: 'none',
+    borderRadius: theme.components.button.borderRadius, // Use theme.components.button.borderRadius
+    fontSize: '1em',
+    fontWeight: 600,
+    fontFamily: theme.typography.fontSecondary, // Use theme.typography.fontSecondary
+    letterSpacing: '0.04em',
+    transition: 'background 0.3s, color 0.3s',
+    display: 'inline-block',
+    textAlign: 'center',
+    margin: '0 8px',
+    cursor: 'pointer',
+    border: 'none'
+  };
+
+  const navBarStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '16px 0',
+    background: theme.colors.card, // Use theme.colors.card
+    borderBottom: `2px solid ${theme.colors.border}`, // Use theme.colors.border
+    borderTop: `2px solid ${theme.colors.border}`,
+    marginBottom: '16px',
+    flexWrap: 'wrap',
+    gap: '10px'
+  };
+
+  const navContainerStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '10px'
+  };
+
+  const buttonStyle = {
+    padding: '8px 12px',
+    borderRadius: theme.components.button.borderRadius,
+    backgroundColor: theme.colors.accent,
+    color: isDarkMode ? '#222' : '#fff',
+    border: 'none',
+    cursor: 'pointer',
+    fontFamily: theme.typography.fontSecondary,
+    fontSize: '0.9em',
+    fontWeight: 600,
+    transition: 'background 0.3s, color 0.3s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    '&:hover': {
+      backgroundColor: theme.colors.accentHover // Add hover effect
+    }
+  };
+
+  const inputStyle = {
+    ...filterInputStyle,
+    '&:hover': {
+      borderColor: theme.colors.accent // Add hover effect for inputs
+    }
+  };
+
+  const notificationStyle = {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    backgroundColor: theme.colors.errorBg, // Use theme for error background
+    color: theme.colors.errorText, // Use theme for error text
+    padding: '12px 20px',
+    borderRadius: '8px',
+    boxShadow: theme.colors.shadow,
+    zIndex: 1000,
+    fontFamily: theme.typography.fontSecondary,
+    fontSize: '0.9em',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px'
+  };
+
+  const spinnerStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '200px'
+  };
+
+  const spinnerCircleStyle = {
+    width: '40px',
+    height: '40px',
+    border: `4px solid ${theme.colors.border}`,
+    borderTop: `4px solid ${theme.colors.accent}`,
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  };
+
+  const dismissNotification = () => setNotification(null);
+
+  const headerContainerStyle = {
+    background: theme.colors.card,
+    padding: '20px',
+    borderBottom: `2px solid ${theme.colors.border}`,
+    boxShadow: theme.colors.shadow,
+    marginBottom: '20px'
+  };
+
+  const headingStyle = {
+    fontSize: '2em',
+    fontFamily: theme.typography.fontSecondary,
+    fontWeight: 700,
+    color: theme.colors.accent,
+    margin: 0,
+    letterSpacing: '0.02em',
+    textAlign: 'center'
+  };
+
   return (
-    <Router>
-      <div className="App" style={appStyle}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
+    <div className="App" style={appStyle}>
+      {notification && (
+        <div style={notificationStyle}>
+          <span>{notification}</span>
+          <button onClick={dismissNotification} style={{ ...buttonStyle, padding: '4px 8px' }}>Dismiss</button>
+        </div>
+      )}
+
+      <div style={headerContainerStyle}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
-          padding: '10px 20px',
-          borderBottom: '1px solid #ccc'
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '0 20px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <h1 style={{ fontSize: '1.5em', margin: 0 }}>ISKCON Account Portal</h1>
+            <h1 style={headingStyle}>ISKCON Account Portal</h1>
             {devoteeToken && devoteeToken !== ADMIN_MOBILE && devoteeName && (
               <span style={{ 
-                fontSize: '1em',
-                color: isDarkMode ? '#aaa' : '#666' 
+                fontSize: '1.1em', 
+                color: theme.colors.text,
+                fontFamily: theme.typography.fontSecondary
               }}>
                 [ {devoteeName} ]
               </span>
@@ -264,195 +460,93 @@ function App() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button onClick={() => setIsDarkMode(!isDarkMode)} style={{
-              padding: '6px 10px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.7em',
-            }}>
-              {isDarkMode ? '☀️' : '🌙'}
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              style={buttonStyle}
+            >
+              {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
             </button>
             {devoteeToken && (
-              <button onClick={handleLogout} style={{
-                padding: '6px 10px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.8em',
-              }}>Logout</button>
+              <button
+                onClick={handleLogout}
+                style={buttonStyle}
+              >
+                Logout
+              </button>
             )}
           </div>
         </div>
+      </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '8px', // Further reduced padding
-          borderRadius: '5px',
-          gap: '8px', // Further reduced gap
-          borderTop: '1px solid #ccc',    // Add top border
-          borderBottom: '1px solid #ccc', // Add bottom border
-          flexWrap: 'wrap', // Allow items to wrap on smaller screens
-        }}>
-          <nav style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            marginBottom: '0px' // Remove margin from nav
-          }}>
-            <ul style={{ 
-              listStyleType: 'none', 
-              padding: 0, 
-              display: 'flex', 
-              gap: '8px', // Further reduced gap
-            }}>
-              <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                <Link to="/home" style={{ // Change the link to /home
-                  padding: '6px 10px', // Further reduced padding for buttons
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  transition: 'background-color 0.3s ease',
-                  fontSize: '0.8em', // Reduced font size for buttons
-                }}
-                onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Home</Link>
-              </li>
-              {devoteeToken ? (
-                <>
-                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                    <Link to="/" style={{
-                      padding: '6px 10px', // Further reduced padding for buttons
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.3s ease',
-                      fontSize: '0.8em', // Reduced font size for buttons
-                    }}
-                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>View Transactions</Link>
-                  </li>
-                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                    <Link to="/add" style={{
-                      padding: '6px 10px', // Further reduced padding for buttons
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.3s ease',
-                      fontSize: '0.8em', // Reduced font size for buttons
-                    }}
-                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Add Transaction</Link>
-                  </li>
-                </>
-              ) : (
-                <>
-                 </>
-              )}
-               {!devoteeToken && (
-                <>
-                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                    <Link to="/devotee/register" style={{
-                      padding: '6px 10px', // Further reduced padding for buttons
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.3s ease',
-                      fontSize: '0.8em', // Reduced font size for buttons
-                    }}
-                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Devotee Registration</Link>
-                  </li>
-                  <li style={{ borderRight: '1px solid #ccc', paddingRight: '8px' }}>
-                    <Link to="/devotee/login" style={{
-                      padding: '6px 10px', // Further reduced padding for buttons
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.3s ease',
-                      fontSize: '0.8em', // Reduced font size for buttons
-                    }}
-                      onMouseOver={(e) => { e.target.style.backgroundColor = '#367c39'; }}
-                      onMouseOut={(e) => { e.target.style.backgroundColor = '#4CAF50'; }}>Devotee Login</Link>
-                  </li>
-                </>
-              )}
-            </ul>
-          </nav>
-        </div>
-
-        <Routes>
-          <Route path="/home" element={<HomePage />} /> {/* Add the new route */}
-          <Route path="/" element={devoteeToken ? (
+      <div style={navBarStyle}>
+        <nav style={navContainerStyle}>
+          <Link to="/home" style={navLinkStyle}>Home</Link>
+          {devoteeToken && (
             <>
-              <div style={{ 
-                padding: '15px', 
-                backgroundColor: isDarkMode ? '#2d333b' : '#f5f5f5',
-                display: 'flex',
-                gap: '10px',
-                flexWrap: 'wrap'
-              }}>
-                {/* Unified search bar */}
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  placeholder={devoteeToken === ADMIN_MOBILE ? 
-                    "Search by name, mobile, or category..." : 
-                    "Search by category..."}
-                  style={{ 
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ccc',
-                    width: '300px'
-                  }}
-                />
-                
-                {/* Date range filter */}
-                <input
-                  type="date"
-                  name="dateMin"
-                  value={filters.dateMin}
-                  onChange={handleFilterChange}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-                <input
-                  type="date"
-                  name="dateMax"
-                  value={filters.dateMax}
-                  onChange={handleFilterChange}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-                
-                {/* Amount range filter */}
-                <input
-                  type="number"
-                  name="amountMin"
-                  placeholder="Min Amount"
-                  value={filters.amountMin}
-                  onChange={handleFilterChange}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-                <input
-                  type="number"
-                  name="amountMax"
-                  placeholder="Max Amount"
-                  value={filters.amountMax}
-                  onChange={handleFilterChange}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-              </div>
+              <Link to="/" style={navLinkStyle}>View Transactions</Link>
+              <Link to="/add" style={navLinkStyle}>Add Transaction</Link>
+            </>
+          )}
+          {!devoteeToken && (
+            <>
+              <Link to="/devotee/register" style={navLinkStyle}>Devotee Registration</Link>
+              <Link to="/devotee/login" style={navLinkStyle}>Devotee Login</Link>
+            </>
+          )}
+        </nav>
+      </div>
 
+      <Routes>
+        <Route path="/home" element={<HomePage />} /> {/* Add the new route */}
+        <Route path="/" element={devoteeToken ? (
+          <div style={{ padding: '16px', backgroundColor: theme.colors.background }}>
+            <div style={filterContainerStyle}>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearch}
+                placeholder={devoteeToken === ADMIN_MOBILE ? 
+                  "Search by name, mobile, or category..." : 
+                  "Search by category..."}
+                style={inputStyle}
+              />
+              <input
+                type="date"
+                name="dateMin"
+                value={filters.dateMin}
+                onChange={handleFilterChange}
+                style={inputStyle}
+              />
+              <input
+                type="date"
+                name="dateMax"
+                value={filters.dateMax}
+                onChange={handleFilterChange}
+                style={inputStyle}
+              />
+              <input
+                type="number"
+                name="amountMin"
+                placeholder="Min Amount"
+                value={filters.amountMin}
+                onChange={handleFilterChange}
+                style={inputStyle}
+              />
+              <input
+                type="number"
+                name="amountMax"
+                placeholder="Max Amount"
+                value={filters.amountMax}
+                onChange={handleFilterChange}
+                style={inputStyle}
+              />
+            </div>
+
+            {isLoading ? (
+              <div style={spinnerStyle}>
+                <div style={spinnerCircleStyle}></div>
+              </div>
+            ) : (
               <table style={tableStyle}>
                 <thead>
                   <tr style={headerRowStyle}>
@@ -477,8 +571,7 @@ function App() {
                 </thead>
                 <tbody>
                   {filterTransactions(filteredTransactions).map((tx, index) => (
-                    <tr key={tx.transactionId} 
-                        style={getRowStyle(tx.isIncome, isDarkMode)}>
+                    <tr key={tx.transactionId} style={getRowStyle(tx.isIncome)}>
                       {devoteeToken === ADMIN_MOBILE ? (
                         <>
                           <td style={cellStyle}>{tx.name}</td>
@@ -488,8 +581,11 @@ function App() {
                           <td style={cellStyle}>₹{tx.totalTransactionAmount}</td>
                           <td style={cellStyle}>
                             {tx.base64Attachment ? (
-                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], 
-                                 {type: 'image/png'}))} target="_blank" rel="noopener noreferrer">
+                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], { type: 'image/png' }))}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: theme.colors.accent }}
+                              >
                                 View Attachment
                               </a>
                             ) : 'No Attachment'}
@@ -502,8 +598,11 @@ function App() {
                           <td style={cellStyle}>₹{tx.totalTransactionAmount}</td>
                           <td style={cellStyle}>
                             {tx.base64Attachment ? (
-                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')],
-                                 {type: 'image/png'}))} target="_blank" rel="noopener noreferrer">
+                              <a href={URL.createObjectURL(new Blob([Buffer.from(tx.base64Attachment, 'base64')], { type: 'image/png' }))}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: theme.colors.accent }}
+                              >
                                 View Attachment
                               </a>
                             ) : 'No Attachment'}
@@ -514,17 +613,20 @@ function App() {
                   ))}
                 </tbody>
               </table>
-              {filteredTransactions.length === 0 && <p>No transactions found.</p>}
-            </>
-          ) : (
-            <Navigate to="/home" replace />
-          )} />
-          <Route path="/add" element={devoteeToken ? <AddTransaction /> : <Navigate to="/devotee/login" replace />} />
-          <Route path="/devotee/register" element={<DevoteeRegistration />} />
-          <Route path="/devotee/login" element={<DevoteeLogin />} />
-        </Routes>
-      </div>
-    </Router>
+            )}
+
+            {!isLoading && filteredTransactions.length === 0 && (
+              <p style={{ textAlign: 'center', color: theme.colors.text }}>No transactions found.</p>
+            )}
+          </div>
+        ) : (
+          <Navigate to="/home" replace />
+        )} />
+        <Route path="/add" element={devoteeToken ? <AddTransaction /> : <Navigate to="/devotee/login" replace />} />
+        <Route path="/devotee/register" element={<DevoteeRegistration />} />
+        <Route path="/devotee/login" element={<DevoteeLogin />} />
+      </Routes>
+    </div>
   );
 }
 
